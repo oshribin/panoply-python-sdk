@@ -7,7 +7,7 @@ import Queue
 import logging
 from copy import copy
 
-VERSION = "1.0.12"
+VERSION = "1.0.13"
 PKGNAME = "panoply-python-sdk"
 MAXSIZE = 1024 * 250 # 250kib
 FLUSH_TIMEOUT = 2.0 # 2 seconds
@@ -17,7 +17,6 @@ def noop( self, *args, **kwargs ):
 
 class SDK ( object ):
 
-    account = None
     apikey = None
     apisecret = None
 
@@ -36,21 +35,22 @@ class SDK ( object ):
         self.apisecret = apisecret
 
         # decompose the api key and secret
-        # api-key: ACCOUNT/RAND1
-        # api-secret: BASE64( RAND2/UUID/AWSACCOUNT/REGION )
+        # api-key: ACCOUNT/COLOR-SDK/RAND1
+        # api-secret: BASE64( RAND2/queueid/AWSACCOUNT/REGION )
+        accounts = apikey.split( "/" )
+        qaccount = accounts[ 1 ]
         decoded = base64.b64decode( apisecret ).split( "/" )
-        rand = decoded[ 0 ]
+        qid = decoded[ 1 ]
         awsaccount = decoded[ 2 ]
         region = decoded[ 3 ]
-        account = apikey.split( "/" )[ 0 ]
 
         # construct the queue url
-        # queue: sdk-ACCOUNT-RAND2
-        self.qurl = "https://sqs.%s.amazonaws.com/%s/sdk-%s-%s" % ( 
+        # queue: color-sdk-qid
+        self.qurl = "https://sqs.%s.amazonaws.com/%s/%s-%s" % ( 
             region, 
             awsaccount, 
-            account, 
-            rand 
+            qaccount, 
+            qid 
         )
 
         self._buffer = Queue.Queue()
